@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Consultation - HealthCare Clinic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .video-container:hover .video-overlay {
+            opacity: 1;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+        .btn-control {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-control:hover {
+            transform: scale(1.1);
+        }
+        .btn-control.btn-muted {
+            background-color: #ccc;
+        }
+        .consultation-form {
+            max-width: 600px;
+        }
+        .history-section {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #callEnded {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            z-index: 10;
+        }
+        #callEnded.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <div class="container mx-auto max-w-6xl">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800 fade-in">
+            <i class="fas fa-video mr-2"></i>Video Consultation Portal
+        </h1>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Video Section -->
+            <div class="flex-1">
+                <div id="formSection">
+                    <div class="bg-white rounded-xl shadow-lg p-6 fade-in consultation-form">
+                        <h2 class="text-2xl font-bold mb-6 text-gray-800">Start Consultation</h2>
+                        <form id="consultationForm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-1">Patient Name</label>
+                                    <input type="text" id="patientName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-1">Select Doctor</label>
+                                    <select id="doctorSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                        <option value="">Choose Doctor</option>
+                                        <option value="Dr. Emily Carter">Dr. Emily Carter (Cardiology)</option>
+                                        <option value="Dr. Marcus Johnson">Dr. Marcus Johnson (Neurology)</option>
+                                        <option value="Dr. Sophia Lee">Dr. Sophia Lee (Pediatrics)</option>
+                                        <option value="Dr. David Patel">Dr. David Patel (Orthopedics)</option>
+                                        <option value="Dr. Olivia Garcia">Dr. Olivia Garcia (Dermatology)</option>
+                                        <option value="Dr. Liam Wilson">Dr. Liam Wilson (Oncology)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-1">Consultation Date</label>
+                                    <input type="date" id="consultDate" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-1">Consultation Time</label>
+                                    <input type="time" id="consultTime" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-semibold mb-1">Symptoms/Reason</label>
+                                <textarea id="symptoms" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24" placeholder="Describe your symptoms or reason for consultation..." required></textarea>
+                            </div>
+                            <button type="submit" class="w-full p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">
+                                Start Video Consultation
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="videoSection" class="mt-8" style="display: none;">
+                    <div class="video-container">
+                        <video id="videoStream" autoplay muted class="w-full h-64 lg:h-96 object-cover"></video>
+                        <div class="video-overlay">
+                            <div class="controls">
+                                <button id="toggleVideo" class="btn-control bg-white text-black">
+                                    <i class="fas fa-video"></i>
+                                </button>
+                                <button id="toggleAudio" class="btn-control bg-white text-black">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button id="endCall" class="btn-control bg-red-600 text-white">
+                                    <i class="fas fa-phone-slash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="callEnded" class="absolute inset-0 flex justify-center items-center opacity-0 transition-opacity duration-500" style="z-index: 10;">
+                            <div class="text-center">
+                                <i class="fas fa-check-circle text-4xl mb-2 text-green-500"></i>
+                                <p class="text-lg font-semibold">Consultation Ended Successfully</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="lg:w-1/3">
+                <div class="bg-white rounded-xl shadow-lg p-6 fade-in history-section">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-history mr-2"></i>Consultation History
+                    </h2>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stream;
+        let consultationHistory = JSON.parse(localStorage.getItem('consultationHistory')) || [];
+
+        const formSection = document.getElementById('formSection');
+        const videoSection = document.getElementById('videoSection');
+        const consultationForm = document.getElementById('consultationForm');
+        const videoStream = document.getElementById('videoStream');
+        const toggleVideo = document.getElementById('toggleVideo');
+        const toggleAudio = document.getElementById('toggleAudio');
+        const endCall = document.getElementById('endCall');
+        const callEnded = document.getElementById('callEnded');
+        const historyList = document.getElementById('historyList');
+
+        // Add mock data if empty
+        if (consultationHistory.length === 0) {
+            consultationHistory = [
+                { patientName: 'John Doe', doctor: 'Dr. Emily Carter', date: '2023-05-15', time: '10:00', symptoms: 'Chest pain' },
+                { patientName: 'Jane Smith', doctor: 'Dr. Marcus Johnson', date: '2023-06-20', time: '14:30', symptoms: 'Headache' },
+                { patientName: 'Bob Johnson', doctor: 'Dr. Sophia Lee', date: '2023-07-10', time: '09:15', symptoms: 'Child vaccination' }
+            ];
+            localStorage.setItem('consultationHistory', JSON.stringify(consultationHistory));
+        }
+
+        consultationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const patientName = document.getElementById('patientName').value;
+            const doctor = document.getElementById('doctorSelect').value;
+            const date = document.getElementById('consultDate').value;
+            const time = document.getElementById('consultTime').value;
+            const symptoms = document.getElementById('symptoms').value;
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoStream.srcObject = stream;
+                formSection.style.display = 'none';
+                videoSection.style.display = 'block';
+
+                // Add to history
+                consultationHistory.unshift({ patientName, doctor, date, time, symptoms });
+                localStorage.setItem('consultationHistory', JSON.stringify(consultationHistory));
+                renderHistory();
+            } catch (err) {
+                alert('Unable to access camera/microphone. Please check permissions.');
+                console.error('Error accessing media devices:', err);
+            }
+        });
+
+        toggleVideo.addEventListener('click', () => {
+            if (stream) {
+                const videoTracks = stream.getVideoTracks();
+                videoTracks.forEach(track => {
+                    track.enabled = !track.enabled;
+                });
+                toggleVideo.querySelector('i').className = videoTracks[0]?.enabled ? 'fas fa-video' : 'fas fa-video-slash';
+                toggleVideo.classList.toggle('btn-muted', !videoTracks[0]?.enabled);
+            }
+        });
+
+        toggleAudio.addEventListener('click', () => {
+            if (stream) {
+                const audioTracks = stream.getAudioTracks();
+                audioTracks.forEach(track => {
+                    track.enabled = !track.enabled;
+                });
+                toggleAudio.querySelector('i').className = audioTracks[0]?.enabled ? 'fas fa-microphone' : 'fas fa-microphone-slash';
+                toggleAudio.classList.toggle('btn-muted', !audioTracks[0]?.enabled);
+            }
+        });
+
+        endCall.addEventListener('click', () => {
+            if (stream) {
+                // Stop all tracks
+                stream.getTracks().forEach(track => {
+                    console.log('Stopping track:', track.kind);
+                    track.stop();
+                });
+                videoStream.srcObject = null;
+                // Clear the stream reference
+                stream = null;
+            }
+            // Show ended message
+            callEnded.classList.add('show');
+            setTimeout(() => {
+                videoSection.style.display = 'none';
+                formSection.style.display = 'block';
+                callEnded.classList.remove('show');
+                consultationForm.reset();
+            }, 2000);
+        });
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            consultationHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'mb-4 p-4 bg-gray-50 rounded-lg';
+                historyItem.innerHTML = `
+                    <p class="font-semibold">${item.patientName}</p>
+                    <p class="text-sm text-gray-600">Dr: ${item.doctor.split(' (')[0]}</p>
+                    <p class="text-sm text-gray-600">${item.date} at ${item.time}</p>
+                    <p class="text-xs text-gray-500">Symptoms: ${item.symptoms.slice(0, 100)}...</p>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        renderHistory();
+    </script>
+</body>
+</html>
+</content>
+</create_file>
